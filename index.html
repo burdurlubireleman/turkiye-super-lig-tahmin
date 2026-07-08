@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Süper Lig 2026 - Sıralama ve Tahmin Simülatörü</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --border-color: #e2e8f0;
+            --primary-color: #0f172a;
+            --accent-color: #3b82f6;
+            --bjk-color: #000000;
+        }
+
+        body {
+            font-family: 'Segoe UI', System-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 26px;
+            text-align: center;
+            font-weight: 800;
+        }
+
+        p.subtitle {
+            color: #64748b;
+            margin-bottom: 25px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .main-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .table-container {
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Tablo Başlığı */
+        .table-header {
+            display: grid;
+            grid-template-columns: 60px 2.5fr 1fr 1fr 1fr 1.5fr 1.5fr;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            padding: 16px 12px;
+            font-size: 13px;
+            text-align: center;
+            user-select: none;
+        }
+
+        .table-header div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .table-header div.align-left {
+            justify-content: flex-start;
+        }
+
+        .sort-btn {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 2px 5px;
+            font-size: 12px;
+            transition: color 0.2s;
+        }
+
+        .sort-btn:hover, .sort-btn.active {
+            color: #ffffff;
+        }
+
+        /* Sürüklenebilir Liste */
+        .sortable-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 60px 2.5fr 1fr 1fr 1fr 1.5fr 1.5fr;
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            cursor: grab;
+            transition: background-color 0.2s, transform 0.2s;
+            font-size: 14px;
+            text-align: center;
+            align-items: center;
+        }
+
+        .table-row:active {
+            cursor: grabbing;
+        }
+
+        .table-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .table-row.dragging {
+            opacity: 0.4;
+            background: #eff6ff;
+            border: 2px dashed #3b82f6;
+        }
+
+        .rank {
+            font-weight: 700;
+            color: #64748b;
+            font-size: 15px;
+        }
+
+        .club-name {
+            font-weight: 600;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1e293b;
+        }
+
+        /* Beşiktaş Özel Vurgusu */
+        .table-row[data-club="Beşiktaş JK"] {
+            border-left: 4px solid var(--bjk-color);
+            background-color: #f8fafc;
+        }
+        .table-row[data-club="Beşiktaş JK"] .club-name {
+            color: var(--bjk-color);
+            font-weight: 700;
+        }
+
+        .value {
+            font-weight: 600;
+            color: #2563eb;
+        }
+
+        /* Alt Toplam Alanı */
+        .table-footer {
+            display: grid;
+            grid-template-columns: 60px 2.5fr 1fr 1fr 1fr 1.5fr 1.5fr;
+            background-color: #f1f5f9;
+            font-weight: 700;
+            padding: 16px 12px;
+            font-size: 14px;
+            text-align: center;
+            border-top: 2px solid var(--border-color);
+            color: #1e293b;
+        }
+
+        /* image_473302.png Görselindeki Kırmızı Alan İçin Buton Alanı */
+        .action-container {
+            position: absolute;
+            right: -180px;
+            bottom: 20px;
+            width: 160px;
+        }
+
+        .share-btn {
+            width: 100%;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .share-btn:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .share-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Mobil Uyumluluk */
+        @media (max-width: 1200px) {
+            /* Ekran daraldığında buton tablonun altına taşınır, düzen bozulmaz */
+            .action-container {
+                position: static;
+                width: 100%;
+                margin-top: 20px;
+                display: flex;
+                justify-content: flex-end;
+            }
+            .share-btn {
+                width: auto;
+                min-width: 200px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            h1 { font-size: 20px; }
+            .table-header, .table-row, .table-footer {
+                grid-template-columns: 45px 2.5fr 1fr 1.5fr;
+            }
+            .hide-mobile {
+                display: none !important;
+            }
+            .action-container {
+                justify-content: center;
+            }
+            .share-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Süper Lig Sıralama & Tahmin Simülatörü</h1>
+    <p class="subtitle">Takımları tutup sürükleyerek kendi tahminini yapabilir veya sütun başlıklarından otomatik sıralayabilirsin!</p>
+
+    <div class="main-wrapper">
+        <div class="table-container">
+            <!-- Tablo Başlıkları -->
+            <div class="table-header">
+                <div>Sıra</div>
+                <div class="align-left">Kulüp</div>
+                <div>Kadro <button class="sort-btn" onclick="sortTable('kadro')">↕</button></div>
+                <div class="hide-mobile">Ø Yaş <button class="sort-btn" onclick="sortTable('yas')">↕</button></div>
+                <div class="hide-mobile">Lejyoner <button class="sort-btn" onclick="sortTable('lejyoner')">↕</button></div>
+                <div class="hide-mobile">Ø Piyasa <button class="sort-btn" onclick="sortTable('apiyasa')">↕</button></div>
+                <div>Toplam Değer <button class="sort-btn" onclick="sortTable('toplam')">↕</button></div>
+            </div>
+
+            <!-- Komple 18 Takımlı Liste -->
+            <ul class="sortable-list" id="sortable-list">
+                <li class="table-row" draggable="true" data-club="Galatasaray SK" data-kadro="33" data-yas="25.7" data-lejyoner="13" data-apiyasa="9.08" data-toplam="299.50">
+                    <span class="rank">1</span>
+                    <span class="club-name">🦁 Galatasaray SK</span>
+                    <span>33</span>
+                    <span class="hide-mobile">25.7</span>
+                    <span class="hide-mobile">13</span>
+                    <span class="hide-mobile">9.08 mil. €</span>
+                    <span class="value">299.50 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Fenerbahçe SK" data-kadro="44" data-yas="26.8" data-lejyoner="23" data-apiyasa="6.33" data-toplam="278.45">
+                    <span class="rank">2</span>
+                    <span class="club-name">🟨🟦 Fenerbahçe SK</span>
+                    <span>44</span>
+                    <span class="hide-mobile">26.8</span>
+                    <span class="hide-mobile">23</span>
+                    <span class="hide-mobile">6.33 mil. €</span>
+                    <span class="value">278.45 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Beşiktaş JK" data-kadro="35" data-yas="25.1" data-lejyoner="18" data-apiyasa="5.22" data-toplam="182.85">
+                    <span class="rank">3</span>
+                    <span class="club-name">🦅 Beşiktaş JK</span>
+                    <span>35</span>
+                    <span class="hide-mobile">25.1</span>
+                    <span class="hide-mobile">18</span>
+                    <span class="hide-mobile">5.22 mil. €</span>
+                    <span class="value">182.85 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Trabzonspor" data-kadro="39" data-yas="25.4" data-lejyoner="17" data-apiyasa="3.92" data-toplam="153.00">
+                    <span class="rank">4</span>
+                    <span class="club-name">🌊 Trabzonspor</span>
+                    <span>39</span>
+                    <span class="hide-mobile">25.4</span>
+                    <span class="hide-mobile">17</span>
+                    <span class="hide-mobile">3.92 mil. €</span>
+                    <span class="value">153.00 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Göztepe" data-kadro="28" data-yas="24.0" data-lejyoner="16" data-apiyasa="2.36" data-toplam="66.10">
+                    <span class="rank">5</span>
+                    <span class="club-name">🟥🟨 Göztepe</span>
+                    <span>28</span>
+                    <span class="hide-mobile">24.0</span>
+                    <span class="hide-mobile">16</span>
+                    <span class="hide-mobile">2.36 mil. €</span>
+                    <span class="value">66.10 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="İstanbul Başakşehir FK" data-kadro="45" data-yas="25.4" data-lejyoner="18" data-apiyasa="1.59" data-toplam="71.48">
+                    <span class="rank">6</span>
+                    <span class="club-name">Ⓝ Başakşehir FK</span>
+                    <span>45</span>
+                    <span class="hide-mobile">25.4</span>
+                    <span class="hide-mobile">18</span>
+                    <span class="hide-mobile">1.59 mil. €</span>
+                    <span class="value">71.48 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Samsunspor" data-kadro="38" data-yas="24.0" data-lejyoner="17" data-apiyasa="1.49" data-toplam="56.75">
+                    <span class="rank">7</span>
+                    <span class="club-name">🔴⚪ Samsunspor</span>
+                    <span>38</span>
+                    <span class="hide-mobile">24.0</span>
+                    <span class="hide-mobile">17</span>
+                    <span class="hide-mobile">1.49 mil. €</span>
+                    <span class="value">56.75 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Çaykur Rizespor" data-kadro="30" data-yas="25.4" data-lejyoner="16" data-apiyasa="1.41" data-toplam="42.25">
+                    <span class="rank">8</span>
+                    <span class="club-name">🟢🔵 Çaykur Rizespor</span>
+                    <span>30</span>
+                    <span class="hide-mobile">25.4</span>
+                    <span class="hide-mobile">16</span>
+                    <span class="hide-mobile">1.41 mil. €</span>
+                    <span class="value">42.25 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Alanyaspor" data-kadro="29" data-yas="25.8" data-lejyoner="13" data-apiyasa="1.15" data-toplam="33.28">
+                    <span class="rank">9</span>
+                    <span class="club-name">🟠🟢 Alanyaspor</span>
+                    <span>29</span>
+                    <span class="hide-mobile">25.8</span>
+                    <span class="hide-mobile">13</span>
+                    <span class="hide-mobile">1.15 mil. €</span>
+                    <span class="value">33.28 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Konyaspor" data-kadro="25" data-yas="26.1" data-lejyoner="8" data-apiyasa="1.14" data-toplam="28.60">
+                    <span class="rank">10</span>
+                    <span class="club-name">🟢⚪ Konyaspor</span>
+                    <span>25</span>
+                    <span class="hide-mobile">26.1</span>
+                    <span class="hide-mobile">8</span>
+                    <span class="hide-mobile">1.14 mil. €</span>
+                    <span class="value">28.60 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Gaziantep FK" data-kadro="23" data-yas="24.6" data-lejyoner="10" data-apiyasa="0.78" data-toplam="17.98">
+                    <span class="rank">11</span>
+                    <span class="club-name">🔴⚫ Gaziantep FK</span>
+                    <span>23</span>
+                    <span class="hide-mobile">24.6</span>
+                    <span class="hide-mobile">10</span>
+                    <span class="hide-mobile">782 bin €</span>
+                    <span class="value">17.98 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Kocaelispor" data-kadro="28" data-yas="25.7" data-lejyoner="13" data-apiyasa="0.70" data-toplam="19.83">
+                    <span class="rank">12</span>
+                    <span class="club-name">🟢🖤 Kocaelispor</span>
+                    <span>28</span>
+                    <span class="hide-mobile">25.7</span>
+                    <span class="hide-mobile">13</span>
+                    <span class="hide-mobile">708 bin €</span>
+                    <span class="value">19.83 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Kasımpaşa" data-kadro="36" data-yas="24.8" data-lejyoner="15" data-apiyasa="0.64" data-toplam="23.30">
+                    <span class="rank">13</span>
+                    <span class="club-name">🔵⚪ Kasımpaşa</span>
+                    <span>36</span>
+                    <span class="hide-mobile">24.8</span>
+                    <span class="hide-mobile">15</span>
+                    <span class="hide-mobile">647 bin €</span>
+                    <span class="value">23.30 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Gençlerbirliği SK" data-kadro="23" data-yas="25.3" data-lejyoner="12" data-apiyasa="0.60" data-toplam="14.00">
+                    <span class="rank">14</span>
+                    <span class="club-name">🔴⚫ Gençlerbirliği</span>
+                    <span>23</span>
+                    <span class="hide-mobile">25.3</span>
+                    <span class="hide-mobile">12</span>
+                    <span class="hide-mobile">609 bin €</span>
+                    <span class="value">14.00 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Çorum FK" data-kadro="33" data-yas="28.8" data-lejyoner="11" data-apiyasa="0.50" data-toplam="16.53">
+                    <span class="rank">15</span>
+                    <span class="club-name">🔴🖤 Çorum FK</span>
+                    <span>33</span>
+                    <span class="hide-mobile">28.8</span>
+                    <span class="hide-mobile">11</span>
+                    <span class="hide-mobile">501 bin €</span>
+                    <span class="value">16.53 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Erzurumspor FK" data-kadro="24" data-yas="27.0" data-lejyoner="6" data-apiyasa="0.42" data-toplam="10.25">
+                    <span class="rank">16</span>
+                    <span class="club-name">🔵⚪ Erzurumspor</span>
+                    <span>24</span>
+                    <span class="hide-mobile">27.0</span>
+                    <span class="hide-mobile">6</span>
+                    <span class="hide-mobile">427 bin €</span>
+                    <span class="value">10.25 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Amed SK" data-kadro="25" data-yas="27.2" data-lejyoner="10" data-apiyasa="0.42" data-toplam="10.70">
+                    <span class="rank">17</span>
+                    <span class="club-name">🟢🔴 Amed SK</span>
+                    <span>25</span>
+                    <span class="hide-mobile">27.2</span>
+                    <span class="hide-mobile">10</span>
+                    <span class="hide-mobile">428 bin €</span>
+                    <span class="value">10.70 mil. €</span>
+                </li>
+                <li class="table-row" draggable="true" data-club="Eyüpspor" data-kadro="23" data-yas="23.3" data-lejyoner="12" data-apiyasa="0.41" data-toplam="9.58">
+                    <span class="rank">18</span>
+                    <span class="club-name">🟪🟨 Eyüpspor</span>
+                    <span>23</span>
+                    <span class="hide-mobile">23.3</span>
+                    <span class="hide-mobile">12</span>
+                    <span class="hide-mobile">416 bin €</span>
+                    <span class="value">9.58 mil. €</span>
+                </li>
+            </ul>
+
+            <!-- Alt Toplam Bilgisi -->
+            <div class="table-footer">
+                <div>-</div>
+                <div style="text-align: left;">Toplam / Ort.</div>
+                <div>531</div>
+                <div class="hide-mobile">25.5 yaş</div>
+                <div class="hide-mobile">250</div>
+                <div class="hide-mobile">2.41 mil. €</div>
+                <div>1.31 milyar €</div>
+            </div>
+        </div>
+
+        <!-- İŞARETLEDİĞİNİZ YERDEKİ YENİ PAYLAŞ BUTONU -->
+        <div class="action-container">
+            <button class="share-btn" onclick="sharePrediction()">
+                📤 Tahmini Paylaş
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const sortableList = document.getElementById("sortable-list");
+        let draggedItem = null;
+        let sortDirections = {};
+
+        // Sürükle-Bırak Olayları
+        sortableList.addEventListener("dragstart", (e) => {
+            draggedItem = e.target.closest('.table-row');
+            setTimeout(() => draggedItem.classList.add("dragging"), 0);
+        });
+
+        sortableList.addEventListener("dragend", (e) => {
+            draggedItem.classList.remove("dragging");
+            draggedItem = null;
+            updateRanks();
+        });
+
+        sortableList.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(sortableList, e.clientY);
+            if (afterElement == null) {
+                sortableList.appendChild(draggedItem);
+            } else {
+                sortableList.insertBefore(draggedItem, afterElement);
+            }
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll(".table-row:not(.dragging)")];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function updateRanks() {
+            const rows = sortableList.querySelectorAll(".table-row");
+            rows.forEach((row, index) => {
+                row.querySelector(".rank").innerText = index + 1;
+            });
+        }
+
+        // Tıklamayla Sıralama Fonksiyonu
+        function tableSort(prop) {
+            const rows = Array.from(sortableList.querySelectorAll(".table-row"));
+            sortDirections[prop] = !sortDirections[prop];
+            const isDescending = sortDirections[prop];
+
+            rows.sort((a, b) => {
+                let valA = parseFloat(a.getAttribute(`data-${prop}`));
+                let valB = parseFloat(b.getAttribute(`data-${prop}`));
+                return isDescending ? valB - valA : valA - valB;
+            });
+
+            rows.forEach(row => sortableList.appendChild(row));
+            updateRanks();
+        }
+
+        function sortTable(property) {
+            tableSort(property);
+        }
+
+        // Tahmini Panoya Kopyalama Fonksiyonu
+        function sharePrediction() {
+            const rows = sortableList.querySelectorAll(".table-row");
+            let textOutput = "🏆 Süper Lig 2026 Sezon Sonu Tahminim:\n\n";
+            
+            rows.forEach((row, index) => {
+                const clubName = row.querySelector(".club-name").innerText;
+                textOutput += `${index + 1}. ${clubName}\n`;
+            });
+
+            textOutput += "\nSimülatör üzerinden oluşturulmuştur. ⚽";
+
+            navigator.clipboard.writeText(textOutput).then(() => {
+                alert("Tahmin listeniz başarıyla kopyalandı! İstediğiniz yerde direkt yapıştırarak paylaşabilirsiniz.");
+            }).catch(err => {
+                console.error("Kopyalama başarısız oldu: ", err);
+            });
+        }
+    </script>
+</body>
+</html>
