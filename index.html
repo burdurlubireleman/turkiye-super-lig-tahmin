@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Süper Lig 2026 - Sıralama ve Tahmin Simülatörü</title>
+    <title>Süper Lig 2026 - Sıralama, Tahmin ve Küme Simülatörü</title>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -13,6 +13,12 @@
             --primary-color: #0f172a;
             --accent-color: #3b82f6;
             --bjk-color: #000000;
+            
+            /* Küme Renkleri */
+            --ucl-color: #1e40af; /* Şampiyonlar Ligi - Koyu Mavi */
+            --uel-color: #c2410c; /* Avrupa Ligi - Turuncu */
+            --uecl-color: #15803d; /* Konferans Ligi - Yeşil */
+            --relegation-color: #b91c1c; /* Küme Düşme - Kırmızı */
         }
 
         body {
@@ -39,6 +45,34 @@
             margin-bottom: 25px;
             font-size: 14px;
             text-align: center;
+        }
+
+        /* Küme Bilgilendirme Kartı */
+        .legend-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
         }
 
         .main-wrapper {
@@ -112,6 +146,7 @@
             font-size: 14px;
             text-align: center;
             align-items: center;
+            border-left: 5px solid transparent; /* Dinamik küme çizgisi için */
         }
 
         .table-row:active {
@@ -128,6 +163,12 @@
             border: 2px dashed #3b82f6;
         }
 
+        /* Dinamik Küme Renklendirmeleri */
+        .table-row.zone-ucl { border-left-color: var(--ucl-color); background-color: #f0f4ff; }
+        .table-row.zone-uel { border-left-color: var(--uel-color); background-color: #fff7ed; }
+        .table-row.zone-uecl { border-left-color: var(--uecl-color); background-color: #f0fdf4; }
+        .table-row.zone-relegation { border-left-color: var(--relegation-color); background-color: #fef2f2; }
+
         .rank {
             font-weight: 700;
             color: #64748b;
@@ -141,16 +182,6 @@
             align-items: center;
             gap: 10px;
             color: #1e293b;
-        }
-
-        /* Beşiktaş Özel Vurgusu */
-        .table-row[data-club="Beşiktaş JK"] {
-            border-left: 4px solid var(--bjk-color);
-            background-color: #f8fafc;
-        }
-        .table-row[data-club="Beşiktaş JK"] .club-name {
-            color: var(--bjk-color);
-            font-weight: 700;
         }
 
         .value {
@@ -171,7 +202,7 @@
             color: #1e293b;
         }
 
-        /* image_473302.png Görselindeki Kırmızı Alan İçin Buton Alanı */
+        /* Aksiyon Butonu */
         .action-container {
             position: absolute;
             right: -180px;
@@ -203,13 +234,8 @@
             box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
         }
 
-        .share-btn:active {
-            transform: translateY(0);
-        }
-
         /* Mobil Uyumluluk */
         @media (max-width: 1200px) {
-            /* Ekran daraldığında buton tablonun altına taşınır, düzen bozulmaz */
             .action-container {
                 position: static;
                 width: 100%;
@@ -217,10 +243,7 @@
                 display: flex;
                 justify-content: flex-end;
             }
-            .share-btn {
-                width: auto;
-                min-width: 200px;
-            }
+            .share-btn { width: auto; min-width: 200px; }
         }
 
         @media (max-width: 768px) {
@@ -229,15 +252,9 @@
             .table-header, .table-row, .table-footer {
                 grid-template-columns: 45px 2.5fr 1fr 1.5fr;
             }
-            .hide-mobile {
-                display: none !important;
-            }
-            .action-container {
-                justify-content: center;
-            }
-            .share-btn {
-                width: 100%;
-            }
+            .hide-mobile { display: none !important; }
+            .action-container { justify-content: center; }
+            .share-btn { width: 100%; }
         }
     </style>
 </head>
@@ -245,6 +262,14 @@
 
     <h1>Süper Lig Sıralama & Tahmin Simülatörü</h1>
     <p class="subtitle">Takımları tutup sürükleyerek kendi tahminini yapabilir veya sütun başlıklarından otomatik sıralayabilirsin!</p>
+
+    <!-- Küme Renk Göstergeleri -->
+    <div class="legend-container">
+        <div class="legend-item"><div class="legend-dot" style="background-color: var(--ucl-color);"></div> Şampiyonlar Ligi (1-2)</div>
+        <div class="legend-item"><div class="legend-dot" style="background-color: var(--uel-color);"></div> Avrupa Ligi (3)</div>
+        <div class="legend-item"><div class="legend-dot" style="background-color: var(--uecl-color);"></div> Konferans Ligi (4)</div>
+        <div class="legend-item"><div class="legend-dot" style="background-color: var(--relegation-color);"></div> Küme Düşme Hattı (Son 4)</div>
+    </div>
 
     <div class="main-wrapper">
         <div class="table-container">
@@ -259,7 +284,7 @@
                 <div>Toplam Değer <button class="sort-btn" onclick="sortTable('toplam')">↕</button></div>
             </div>
 
-            <!-- Komple 18 Takımlı Liste -->
+            <!-- 18 Takımlı Liste -->
             <ul class="sortable-list" id="sortable-list">
                 <li class="table-row" draggable="true" data-club="Galatasaray SK" data-kadro="33" data-yas="25.7" data-lejyoner="13" data-apiyasa="9.08" data-toplam="299.50">
                     <span class="rank">1</span>
@@ -437,7 +462,6 @@
             </div>
         </div>
 
-        <!-- İŞARETLEDİĞİNİZ YERDEKİ YENİ PAYLAŞ BUTONU -->
         <div class="action-container">
             <button class="share-btn" onclick="sharePrediction()">
                 📤 Tahmini Paylaş
@@ -485,10 +509,28 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
+        // Sıralamayı ve Küme Renklerini Dinamik Güncelleyen Fonksiyon
         function updateRanks() {
             const rows = sortableList.querySelectorAll(".table-row");
+            const totalRows = rows.length;
+
             rows.forEach((row, index) => {
-                row.querySelector(".rank").innerText = index + 1;
+                const rank = index + 1;
+                row.querySelector(".rank").innerText = rank;
+
+                // Eski sınıfları temizle
+                row.classList.remove("zone-ucl", "zone-uel", "zone-uecl", "zone-relegation");
+
+                // Yeni kümeleri sıraya göre ata
+                if (rank <= 2) {
+                    row.classList.add("zone-ucl"); // Şampiyonlar Ligi
+                } else if (rank === 3) {
+                    row.classList.add("zone-uel"); // Avrupa Ligi
+                } else if (rank === 4) {
+                    row.classList.add("zone-uecl"); // Konferans Ligi
+                } else if (rank > totalRows - 4) {
+                    row.classList.add("zone-relegation"); // Küme Düşme Hattı
+                }
             });
         }
 
@@ -512,7 +554,6 @@
             tableSort(property);
         }
 
-        // Tahmini Panoya Kopyalama Fonksiyonu
         function sharePrediction() {
             const rows = sortableList.querySelectorAll(".table-row");
             let textOutput = "🏆 Süper Lig 2026 Sezon Sonu Tahminim:\n\n";
@@ -530,6 +571,9 @@
                 console.error("Kopyalama başarısız oldu: ", err);
             });
         }
+
+        // Sayfa ilk yüklendiğinde küme renklerini ata
+        updateRanks();
     </script>
 </body>
 </html>
